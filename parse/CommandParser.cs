@@ -9,7 +9,7 @@ public enum CommandType {
 };
 
 public class CommandTypeParser {
-    public static (ParseReport<CommandType>, int) ParseCommandType(string s) {
+    public static (ParseReport<CommandType>, double) ParseCommandType(string s) {
         s = s.ToLower();
 
         (string, CommandType)[] commands = [
@@ -28,9 +28,9 @@ public class CommandTypeParser {
 
         // Check the closest match
         Fastenshtein.Levenshtein lev = new(s);
-        (int dist, string closest, CommandType closest_command) = commands
+        (double dist, string closest, CommandType closest_command) = commands
             .Select(
-                elem => (lev.DistanceFrom(elem.Item1), elem.Item1, elem.Item2)
+                elem => ((double) lev.DistanceFrom(elem.Item1) / s.Length, elem.Item1, elem.Item2)
             )
             .OrderBy(elem => elem.Item1)
             .First();

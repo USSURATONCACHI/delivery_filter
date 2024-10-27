@@ -25,26 +25,28 @@ internal class Program
         ArgsParser.ParseResult result = ArgsParser.ParseAndCheck(parse_args);
 
         while (result.Error != "") {
-            PrintParseResultMetadata(result, parse_args);
+            PrintParseResultError(result, parse_args);
+            PrintParseResultFix(result, parse_args);
 
             if (result.FixedArgs is null)
                 break;
-            parse_args = result.FixedArgs;
 
+            parse_args = result.FixedArgs.Where(x => x.Length > 0).ToArray();
             result = ArgsParser.ParseAndCheck(parse_args);
         }
 
         return 0;
     }
 
-    private static void PrintParseResultMetadata(ArgsParser.ParseResult result, string[] args) {
+    private static void PrintParseResultError(ArgsParser.ParseResult result, string[] args) {
         if (result.Error != "") {
             PrintError($"Error: {result.Error}");
 
             if (result.ErrorFocus != -1)
                 PrintWithFocusOnArgument(args, result.ErrorFocus, ConsoleColor.Red);
         }
-
+    }
+    private static void PrintParseResultFix(ArgsParser.ParseResult result, string[] args) {
         if (result.FixExplanation != "") {
             PrintSuggestion($"Suggestion: {result.FixExplanation}");
 
@@ -81,7 +83,12 @@ internal class Program
         string focused_arg = "";
         string postfix = " ";
 
-        foreach ( (string arg, int i) in args.Select((x, i) => (x, i)) ) {
+        foreach ( (string arg_in, int i) in args.Select((x, i) => (x, i)) ) {
+            string arg = arg_in;
+            if (arg.Contains(' ')) {
+                arg = $"\"{arg}\"";
+            }
+
             if (i < argument_index) {
                 prefix += arg + " ";
             } else if (i == argument_index) {
@@ -113,9 +120,26 @@ internal class Program
 
     }
     private static void PrintWithoutFocus(string[] args) {
-        Console.WriteLine($"$ {PROGRAM_NAME} {string.Join(" ", args)}");
+        Console.Write($"$ {PROGRAM_NAME} ");
 
+        Console.ForegroundColor = ConsoleColor.Green;
+        foreach (string arg_in in args) {
+            string arg = arg_in;
+            if (arg.Contains(' ')) {
+                arg = $"\"{arg}\"";
+            }
+            
+            Console.Write(arg);
+            Console.Write(" ");
+        }
+        Console.WriteLine();
+        Console.ResetColor();
     }
+
+    private static string EscapeQuotes(string input) {
+        return input.Replace("\"", "\\\"").Replace("'", "\\'");
+    }
+
 }
 
         /*

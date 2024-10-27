@@ -60,7 +60,7 @@ public class ArgsParser {
             ErrorFocus = PrependFocusIndex(this.ErrorFocus, prepend_args.Length),
 
             FixExplanation = this.FixExplanation,
-            FixedArgs = prepend_args.Concat(this.FixedArgs).ToArray(),
+            FixedArgs = this.FixedArgs is null ? prepend_args : [.. prepend_args, .. this.FixedArgs],
             FixInputFocus = PrependFocusIndex(this.FixInputFocus, prepend_args.Length),
             FixOuputFocus = PrependFocusIndex(this.FixOuputFocus, prepend_args.Length),
         };
@@ -85,7 +85,7 @@ public class ArgsParser {
     }
 
     private static ParseResult ParseAndCheckCommandType(string[] args) {
-        (var command, int levenshtein_distance) = CommandTypeParser.ParseCommandType(args[0]);
+        (var command, double levenshtein_distance) = CommandTypeParser.ParseCommandType(args[0]);
         bool is_command = command.Errors.Length == 0;
 
         if (command.Errors.Length == 0) {
@@ -101,7 +101,7 @@ public class ArgsParser {
         };
 
         // Find argument with lowest distance
-        int closest_command_dist = Int32.MaxValue;
+        double closest_command_dist = Int32.MaxValue;
         int closest_command_index = -1;
         string closest_command_suggestion = "";
 
@@ -111,8 +111,8 @@ public class ArgsParser {
             
             // Command
             bool looks_like_command = false;
-            (var command_rep, int lev_dist) = CommandTypeParser.ParseCommandType(arg);
-            looks_like_command = lev_dist < command_rep.FixSuggestion.Length;
+            (var command_rep, double lev_dist) = CommandTypeParser.ParseCommandType(arg);
+            looks_like_command = lev_dist < 1.0;
 
             if (looks_like_command && lev_dist < closest_command_dist) {
                 closest_command_dist = lev_dist;
@@ -126,11 +126,15 @@ public class ArgsParser {
             
             string closest_command_text = args[closest_command_index];
 
-            if (closest_command_index != 0)
-                result.FixExplanation = $"Replace '{closest_command_text}' with '{closest_command_suggestion}' and move it to the first argument";
+            if (closest_command_text == closest_command_suggestion)
+                result.FixExplanation = $"Take '{closest_command_suggestion}'";
             else
                 result.FixExplanation = $"Replace '{closest_command_text}' with '{closest_command_suggestion}'";
 
+            if (closest_command_index != 0) {
+                result.FixInputFocus = closest_command_index;
+                result.FixExplanation += " and move it to the first argument";
+            }
 
             var args_list = args.ToList();
             args_list.RemoveAt(closest_command_index);
@@ -138,7 +142,6 @@ public class ArgsParser {
 
 
             result.FixedArgs = args_list.ToArray();
-            result.FixInputFocus = closest_command_index;
             result.FixOuputFocus = 0;
         } else {
             // Suggest adding a command
@@ -155,21 +158,89 @@ public class ArgsParser {
 
     private static ParseResult ParseAndCheckCommand(CommandType type, string[] args) {
         switch (type) {
-            case CommandType.Help:
-                return new ParseResult(new HelpArgs()) {
-                    FixExplanation = "Unneccessary arguments after 'help'",
-                    FixedArgs = [],
-                    FixInputFocus = 0,
-                    FixOuputFocus = -1,
-                };
+            case CommandType.Help: {
+                if (args.Length > 0) {
+                    return new ParseResult(new HelpArgs()) {
+                        Error = "Unneccessary arguments after 'help'",
+                        ErrorFocus = 0,
+
+                        FixExplanation = "Remove unneccessary arguments",
+                        FixedArgs = [],
+                        FixOuputFocus = 0,
+                    };
+                } else {
+                    return new ParseResult(new HelpArgs());
+                }
+            }
+
+            case CommandType.GenMockup: return ParseAndCheckGenMockup(args);
 
             case CommandType.Get:
             case CommandType.CheckCorrectness:
             case CommandType.FixTable:
-            case CommandType.GenMockup:
             default:
                 throw new NotImplementedException();
         }
+    }
+
+    private static ParseResult ParseAndCheckGenMockup(string[] args) {
+        if (args.Length < 1) {
+            return new ParseResult() {
+                Error = "No output file specified.",
+
+                FixExplanation = "Add a filepath",
+                FixedArgs = ["./mock.csv"],
+                FixOuputFocus = 0,
+            };
+        }
+
+        string filepath = args[0];
+
+        if (!IsValidPath(filepath)) {
+            string suggested_path = RemoveInvalidPathChars(filepath);
+            if (suggested_path.EndsWith('/') || suggested_path.EndsWith('\\'))
+                suggested_path += "mock";
+
+            if (suggested_path == "")
+                suggested_path += "./mock";
+
+            if (!suggested_path.EndsWith(".csv"))
+                suggested_path += ".csv";
+
+            
+            return new ParseResult() {
+                Error = $"'{filepath}' is not a valid filepath.",
+                ErrorFocus = 0,
+
+                FixExplanation = "Remove invalid characters from path.",
+                FixedArgs = (new[]{suggested_path}).Concat(args[1..]).ToArray(),
+                FixOuputFocus = 0,
+            };
+        }
+
+        if (filepath.EndsWith('/') || filepath.EndsWith('\\')) {
+            return new ParseResult() {
+                Error = $"'{filepath}' is not a filepath.",
+                ErrorFocus = 0,
+
+                FixExplanation = "Add a filename.",
+                FixedArgs =  (new[]{filepath + "mock.csv"}).Concat(args[1..]).ToArray(),
+                FixOuputFocus = 0,
+            };
+        }
+
+        ParseResult result = new(new GenMockupArgs() { Filepath = filepath });
+
+        if (args.Length > 1) {
+            result.Error = "Unneccessary arguments in the end.";
+            result.ErrorFocus = 1;
+
+            result.FixedArgs = args[..1];
+            result.FixExplanation = "Remove unneccessary arguments from path.";
+            result.FixOuputFocus = 1;
+        }
+
+        return result;
     }
 
     private static bool DoesLookLikeTime(string s) {
@@ -188,4 +259,14 @@ public class ArgsParser {
             return false;
         }
     }
+    private static bool IsValidPath(string path) {
+        char[] invalidChars = Path.GetInvalidPathChars();
+        return !path.Any(ch => invalidChars.Contains(ch));
+    }
+
+    private static string RemoveInvalidPathChars(string path) {
+        char[] invalidChars = Path.GetInvalidPathChars();
+        return new string(path.Where(ch => !invalidChars.Contains(ch)).ToArray());
+    }
+
 }
