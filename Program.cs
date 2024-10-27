@@ -1,10 +1,8 @@
 ﻿using log4net.Config;
 using log4net;
 using System.Reflection;
-using DeliveryFilter.Parse;
 using System.Data;
-using System.Net;
-using System.Runtime.CompilerServices;
+using DeliveryFilter.ParseV2;
 
 namespace DeliveryFilter;
 
@@ -21,8 +19,19 @@ internal class Program
         }
         LOG.Info("Program starts");
 
+        var gen_mockup        = new Named("gen_mockup",        new ParseV2.FilePath("output file", "mock", ".csv"));
+        var check_correctness = new Named("check_correctness", new ParseV2.FilePath("input file", "data", ".csv"));
+        var fix_table         = new Named("fix_table",         new ParseV2.FilePath("input file", "data", ".csv"));
+        var get               = new Named("get",               null);
+
+        var variant = new Variant();
+        variant.Add(gen_mockup);
+        variant.Add(check_correctness);
+        variant.Add(fix_table);
+        variant.Add(get);
+
         string[] parse_args = args;
-        ArgsParser.ParseResult result = ArgsParser.ParseAndCheck(parse_args);
+        ParseResult result = variant.TryParse(parse_args);
 
         while (result.Error != "") {
             PrintParseResultError(result, parse_args);
@@ -32,30 +41,30 @@ internal class Program
                 break;
 
             parse_args = result.FixedArgs.Where(x => x.Length > 0).ToArray();
-            result = ArgsParser.ParseAndCheck(parse_args);
+            result = variant.TryParse(parse_args);
         }
 
         return 0;
     }
 
-    private static void PrintParseResultError(ArgsParser.ParseResult result, string[] args) {
+    private static void PrintParseResultError(ParseResult result, string[] args) {
         if (result.Error != "") {
             PrintError($"Error: {result.Error}");
 
-            if (result.ErrorFocus != -1)
-                PrintWithFocusOnArgument(args, result.ErrorFocus, ConsoleColor.Red);
+            if (result.ErrorFocus.Count > 0)
+                PrintWithFocusOnArgument(args, result.ErrorFocus, ConsoleColor.Red, ConsoleColor.DarkRed);
         }
     }
-    private static void PrintParseResultFix(ArgsParser.ParseResult result, string[] args) {
+    private static void PrintParseResultFix(ParseResult result, string[] args) {
         if (result.FixExplanation != "") {
             PrintSuggestion($"Suggestion: {result.FixExplanation}");
 
-            if (result.FixInputFocus != -1)
-                PrintWithFocusOnArgument(args, result.FixInputFocus, ConsoleColor.Blue);
+            if (result.FixInputFocus.Count > 0)
+                PrintWithFocusOnArgument(args, result.FixInputFocus, ConsoleColor.Blue, ConsoleColor.DarkBlue);
             
             if (result.FixedArgs is not null) {
-                if (result.FixOuputFocus != -1)
-                    PrintWithFocusOnArgument(result.FixedArgs, result.FixOuputFocus, ConsoleColor.Green);
+                if (result.FixOuputFocus.Count > 0)
+                    PrintWithFocusOnArgument(result.FixedArgs, result.FixOuputFocus, ConsoleColor.Green, ConsoleColor.DarkGreen);
                 else
                     PrintWithoutFocus(result.FixedArgs);
             }
@@ -78,49 +87,67 @@ internal class Program
         Console.ResetColor();
     }
 
-    private static void PrintWithFocusOnArgument(string[] args, int argument_index, ConsoleColor color) {
-        string prefix = $"$ {PROGRAM_NAME} ";
-        string focused_arg = "";
-        string postfix = " ";
+    struct Segment {
+        public string Text;
+        public bool IsColored;
+    };
+    private static void PrintWithFocusOnArgument(string[] args, IEnumerable<uint> focus, ConsoleColor color, ConsoleColor color_bg) {
+        List<Segment> segments = new();
 
-        foreach ( (string arg_in, int i) in args.Select((x, i) => (x, i)) ) {
+        segments.Add(new Segment() {
+            Text = $"$ {PROGRAM_NAME}",
+            IsColored = false,
+        });
+
+        uint index = 0;
+        foreach (string arg_in in args) {
             string arg = arg_in;
             if (arg.Contains(' ')) {
                 arg = $"\"{arg}\"";
             }
 
-            if (i < argument_index) {
-                prefix += arg + " ";
-            } else if (i == argument_index) {
-                focused_arg = arg;
-            } else {
-                postfix += arg + " ";
-            }
+            Segment s = new() {
+                Text = arg,
+                IsColored = focus.Contains(index),
+            };
+
+            if (s.IsColored && s.Text.Length == 0)
+                s.Text = " ";
+
+            segments.Add(s);
+            index++;
         }
 
         // Line
-        Console.Write(prefix);
-
-        Console.ForegroundColor = color;
-        Console.Write(focused_arg);
-        Console.ResetColor();
-
-        Console.Write(postfix);
-        Console.WriteLine("");
+        foreach (Segment s in segments) {
+            if (s.IsColored) {
+                Console.ForegroundColor = color;
+                if (s.Text == " ")
+                    Console.BackgroundColor = color_bg;
+            }
+            Console.Write(s.Text);
+            Console.ResetColor();
+            Console.Write(" ");
+        }
+        Console.WriteLine();
 
         // Next line ^~~~~~
-        Console.Write(new string(' ', prefix.Length));
-        Console.ForegroundColor = color;
-        Console.Write("^");
-
-        if (focused_arg.Length > 1)
-            Console.Write(new string('~', focused_arg.Length - 1));
-        Console.ResetColor();
-        Console.WriteLine("");
-
+        foreach (Segment s in segments) {
+            if (s.IsColored) {
+                Console.ForegroundColor = color;
+                Console.Write("^");
+                if (s.Text.Length > 1)
+                    Console.Write(new string('~', s.Text.Length - 1));
+                Console.ResetColor();
+            } else {
+                Console.Write(new string(' ', s.Text.Length));
+            }
+            Console.Write(" ");
+        }
+        Console.WriteLine();
     }
     private static void PrintWithoutFocus(string[] args) {
-        Console.Write($"$ {PROGRAM_NAME} ");
+        Console.Write($"$ {PROGRAM_NAME}");
 
         Console.ForegroundColor = ConsoleColor.Green;
         foreach (string arg_in in args) {
