@@ -173,23 +173,59 @@ public class ArgsParser {
                 }
             }
 
-            case CommandType.GenMockup: return ParseAndCheckGenMockup(args);
+            case CommandType.GenMockup:        return ParseAndCheckGenMockup(args);
+            case CommandType.CheckCorrectness: return ParseAndCheckCheckCorrectness(args);
+            case CommandType.FixTable:         return ParseAndCheckFixTable(args);
 
             case CommandType.Get:
-            case CommandType.CheckCorrectness:
-            case CommandType.FixTable:
             default:
                 throw new NotImplementedException();
         }
     }
 
+
+    struct FilepathParsingParams {
+        public string NoFileErrorText;
+        public string DefaultFileName;
+        public string DefaultFileExtension;
+
+    }
     private static ParseResult ParseAndCheckGenMockup(string[] args) {
+        FilepathParsingParams paramss = new() {
+            NoFileErrorText = "No output file specified.",
+            DefaultFileName = "mock",
+            DefaultFileExtension = ".csv",
+        };
+        
+        return ParseAndCheckFilepath(args, paramss, filepath => new GenMockupArgs() { Filepath = filepath });
+    }
+
+    private static ParseResult ParseAndCheckCheckCorrectness(string[] args) {
+        FilepathParsingParams paramss = new() {
+            NoFileErrorText = "No input file specified.",
+            DefaultFileName = "data",
+            DefaultFileExtension = ".csv",
+        };
+        
+        return ParseAndCheckFilepath(args, paramss, filepath => new CheckCorrectnessArgs() { Filepath = filepath });
+    }
+    private static ParseResult ParseAndCheckFixTable(string[] args) {
+        FilepathParsingParams paramss = new() {
+            NoFileErrorText = "No input file specified.",
+            DefaultFileName = "data",
+            DefaultFileExtension = ".csv",
+        };
+        
+        return ParseAndCheckFilepath(args, paramss, filepath => new FixTableArgs() { Filepath = filepath });
+    }
+
+    private static ParseResult ParseAndCheckFilepath(string[] args, FilepathParsingParams paramss, Func<string, object> func) {
         if (args.Length < 1) {
             return new ParseResult() {
-                Error = "No output file specified.",
+                Error = paramss.NoFileErrorText,
 
                 FixExplanation = "Add a filepath",
-                FixedArgs = ["./mock.csv"],
+                FixedArgs = [$"./{paramss.DefaultFileName}{paramss.DefaultFileExtension}"],
                 FixOuputFocus = 0,
             };
         }
@@ -199,13 +235,13 @@ public class ArgsParser {
         if (!IsValidPath(filepath)) {
             string suggested_path = RemoveInvalidPathChars(filepath);
             if (suggested_path.EndsWith('/') || suggested_path.EndsWith('\\'))
-                suggested_path += "mock";
+                suggested_path += paramss.DefaultFileName;
 
             if (suggested_path == "")
-                suggested_path += "./mock";
+                suggested_path += "./" + paramss.DefaultFileName;
 
-            if (!suggested_path.EndsWith(".csv"))
-                suggested_path += ".csv";
+            if (!suggested_path.EndsWith(paramss.DefaultFileExtension))
+                suggested_path += paramss.DefaultFileExtension;
 
             
             return new ParseResult() {
@@ -229,7 +265,7 @@ public class ArgsParser {
             };
         }
 
-        ParseResult result = new(new GenMockupArgs() { Filepath = filepath });
+        ParseResult result = new(func(filepath));
 
         if (args.Length > 1) {
             result.Error = "Unneccessary arguments in the end.";
