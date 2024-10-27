@@ -8,10 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="log4net.config" CopyToOutputDirectory="PreserveNewest"/>
+    <None Update="log4net.config" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Fastenshtein" Version="1.0.10" />
     <PackageReference Include="Log4Net" Version="3.0.2" />
   </ItemGroup>
 
