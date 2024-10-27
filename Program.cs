@@ -22,7 +22,14 @@ internal class Program
         var gen_mockup        = new Named("gen_mockup",        new ParseV2.FilePath("output file", "mock", ".csv"));
         var check_correctness = new Named("check_correctness", new ParseV2.FilePath("input file", "data", ".csv"));
         var fix_table         = new Named("fix_table",         new ParseV2.FilePath("input file", "data", ".csv"));
-        var get               = new Named("get",               null);
+        var get               = new Named("get", 
+                new ParseV2.Unordered((_, _) => new ParseResult(), 
+                    [
+                        new ParseV2.Unordered.Option{ Name = "--file1", ArgsCount = 1, Parser = new ParseV2.FilePath("input file", "data", ".csv") },
+                        new ParseV2.Unordered.Option{ Name = "--file2", ArgsCount = 1, Parser = new ParseV2.FilePath("input file", "data", ".csv") },
+                    ]
+                )   
+            );
 
         var variant = new Variant();
         variant.Add(gen_mockup);
@@ -45,6 +52,10 @@ internal class Program
         }
 
         return 0;
+    }
+
+    private static ParseResult CombineGet(ParseV2.Unordered.ParsedValue[] values, string args[]) {
+        
     }
 
     private static void PrintParseResultError(ParseResult result, string[] args) {

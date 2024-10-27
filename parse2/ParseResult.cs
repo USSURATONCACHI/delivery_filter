@@ -44,6 +44,19 @@ public struct ParseResult {
         FixOuputFocus = PrependFocus(this.FixOuputFocus, (uint)prepend_args.Length),
     };
 
+    public ParseResult Postpend(string[] additional_args) => new() {
+        Parsed = this.Parsed,
+        HeuristicScore = this.HeuristicScore,
+
+        Error = this.Error,
+        ErrorFocus = this.ErrorFocus,
+
+        FixExplanation = this.FixExplanation,
+        FixedArgs = this.FixedArgs is null ? additional_args : [.. this.FixedArgs, .. additional_args],
+        FixInputFocus = this.FixInputFocus,
+        FixOuputFocus = this.FixOuputFocus,
+    };
+
     private static List<uint> PrependFocus(List<uint> focus, uint add) => 
         focus.Select(x => x + add).Order().ToList();
 }
