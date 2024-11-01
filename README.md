@@ -46,7 +46,15 @@ $ ./delivery_filter get <file> [options]
 Filter deliveries from the `deliveries.csv` file, for the `North` district between specific dates, and save results to `filtered.csv`:
 
 ```bash
-$ dotnet run -- get example.csv --district North --from-datetime 2023-10-01 00:00 --to-datetime 2023-10-31 23:59 --outfile filtered.csv
+$ dotnet run -- get example.csv --district North --from-datetime "2023-10-01 00:00" --to-datetime "2023-10-31 23:59" --outfile filtered.csv
+```
+
+`filtered.csv` will have following contents:
+```
+Id,District,Datetime,Weight
+1,North,2023-10-01 08:30:00,15.4
+5,North,2023-10-01 11:30:00,16.3
+9,North,2023-10-01 15:15:00,13.9
 ```
 
 ## Logging
