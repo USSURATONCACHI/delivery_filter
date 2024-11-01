@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Csv" Version="2.0.93" />
     <PackageReference Include="Fastenshtein" Version="1.0.10" />
     <PackageReference Include="Log4Net" Version="3.0.2" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />

@@ -1,13 +1,18 @@
 ﻿using log4net.Config;
 using log4net;
 using System.Reflection;
-using System;
 using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.Globalization;
+using Csv;
 
 
 namespace DeliveryFilter;
+
+public struct Delivery {
+    public long Id;
+    public string District;
+    public DateTime DeliveryTime;
+    public double Weight;
+} 
 
 internal class Program
 {
@@ -64,8 +69,7 @@ internal class Program
                 IsJson = json,
                 File = file
             };
-
-            Console.WriteLine($"Getting data for district: {parameters.District}, datetime: {parameters.Datetime}, JSON output: {parameters.IsJson}, file: {parameters.File}");
+            Get(parameters);
         },
         getCommand.Options[0] as Option<string>, 
         getCommand.Options[1] as Option<DateTime>, 
@@ -80,6 +84,37 @@ internal class Program
         return rootCommand.Invoke(args);
 
     }
+
+    public static void Get(GetParameters p) {
+        foreach (var entry in ReadTableToFile(p.File)) {
+            Console.WriteLine($"Entry: {entry.Id} {entry.District} {entry.DeliveryTime} {entry.Weight}");
+        }
+    }
+
+    public static IEnumerable<Delivery> ReadTableToFile(string filepath) {
+        return ReadTableToFile(filepath, _ => true);
+    }
+    public static IEnumerable<Delivery> ReadTableToFile(string filepath, Func<Delivery, bool> filter) {
+        using var fs = new FileStream(filepath, FileMode.Open, FileAccess.Read);
+        using var reader = new StreamReader(fs, System.Text.Encoding.UTF8);
+
+        foreach (var line in CsvReader.Read(reader)) {
+            Delivery d = ReadRowToDelivery(line);
+            if (filter(d)) {
+                yield return d;
+            }
+        }
+    }
+
+    public static Delivery ReadRowToDelivery(ICsvLine line) {
+        return new Delivery
+        {
+            Id = long.Parse(line["Id"]),
+            District = line["District"],
+            DeliveryTime = DateTime.Parse(line["Datetime"]),
+            Weight = double.Parse(line["Weight"])
+        };
+    }
 }
 
 public struct GetParameters
@@ -89,18 +124,3 @@ public struct GetParameters
     public string File;
     public bool IsJson;
 }
-
-
-
-        /*
-        
-        $ delivery_filter gen_mockup <file>
-        $ delivery_filter check_correctness <file>
-        $ delivery_filter fix_table <file>
-
-        $ delivery_filter get Stillwater 2024-01-10 12:52:17 <file>
-        $ delivery_filter get Stillwater 2024-01-10 12:52:17 --json <file>
-        $ delivery_filter get --district Stillwater --date 2024-01-10 --time 12:52:17 <file>
-        $ delivery_filter get --district Stillwater --datetime "2024-01-10 12:52:17" <file>
-        
-        */
