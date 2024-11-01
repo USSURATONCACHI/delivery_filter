@@ -19,7 +19,6 @@ public class RootCommandBuilder {
         {
             new Option<string>("--district", "District name"),
             new Option<DateTime>("--datetime", () => DateTime.MinValue, "Date and time"),
-            new Option<bool>("--json", "Output as JSON"),
             new Argument<string>("file", "File path")
         };
 
@@ -43,7 +42,6 @@ public class RootCommandBuilder {
             endpoints.Get,
             CheckNonNull( getCommand.Options[0] as Option<string>     ), 
             CheckNonNull( getCommand.Options[1] as Option<DateTime>   ), 
-            CheckNonNull( getCommand.Options[2] as Option<bool>       ), 
             CheckNonNull( getCommand.Arguments[0] as Argument<string> )
         );
 
