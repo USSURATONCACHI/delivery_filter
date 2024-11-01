@@ -1,4 +1,3 @@
-```markdown
 # delivery_filter
 
 A CLI tool to read specific CSV format and filter entries by city district and datetime.
@@ -11,7 +10,6 @@ Id,District,Datetime,Weight
 1,North,2023-10-01 08:30,15.4
 2,East,2023-10-01 09:45,12.2
 ...
-```
 
 - **Id**: Unique identifier for the delivery
 - **District**: Delivery region (any string)
