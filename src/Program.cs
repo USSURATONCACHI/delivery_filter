@@ -24,6 +24,5 @@ internal class Program
         // Check out `Endpoints.cs` for command methods
 
         return command.Invoke(args);
-
     }
 }

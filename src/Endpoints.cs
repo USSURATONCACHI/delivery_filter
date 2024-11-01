@@ -54,7 +54,7 @@ public class Endpoints {
         using (var writer = new StreamWriter(filepath)) {
             writer.WriteLine("Id,District,Datetime,Weight"); // CSV header
             foreach (var entry in entries) {
-                LOG.Info($"Entry: {entry.Id} {entry.District} {entry.DeliveryTime} {entry.Weight}");
+                LOG.Info($"Entry: ID {entry.Id}, {entry.District}, {entry.DeliveryTime:yyyy-MM-dd HH:mm:ss}, {entry.Weight} kg");
 
                 writer.WriteLine($"{entry.Id},{entry.District},{entry.DeliveryTime:yyyy-MM-dd HH:mm:ss},{entry.Weight}");
             }
