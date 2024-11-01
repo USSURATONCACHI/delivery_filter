@@ -18,7 +18,7 @@ internal class Program
         }
         LOG.Info("Program starts");
 
-        Endpoints ep = new Endpoints();
+        Endpoints ep = new();
         RootCommand command = RootCommandBuilder.Build(ep);
         return command.Invoke(args);
 
