@@ -47,6 +47,8 @@ public class Endpoints {
             }
         } catch (FileNotFoundException) {
             LogError($"File '{file}' not found");
+        } catch (NoRequiredColumnsException) {
+            LogError($"CSV does not have required columns");
         }
     }
 
@@ -74,7 +76,7 @@ public class Endpoints {
         foreach (var line in CsvReader.Read(reader)) {
             if (!checked_columns) {
                 if (!CheckColumns(line))
-                    throw new Exception("CSV does not have required columns");
+                    throw new NoRequiredColumnsException();
                 checked_columns = true;
             }
 
