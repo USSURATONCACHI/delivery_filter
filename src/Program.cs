@@ -20,6 +20,9 @@ internal class Program
 
         Endpoints ep = new();
         RootCommand command = RootCommandBuilder.Build(ep);
+
+        // Check out `Endpoints.cs` for command methods
+
         return command.Invoke(args);
 
     }

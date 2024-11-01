@@ -18,12 +18,12 @@ public class Endpoints {
 
     public Endpoints() {}
 
-    public void Get(string district, DateTime datetime, string logfile, string outfile, string file) {
+    public void Get(string district, DateTime start_datetime, DateTime end_datetime, string logfile, string outfile, string file) {
         if (logfile is not null)
             LogUtil.AddFileLog4Net(logfile);
 
         LOG.Info($"Input file is: {file}");
-        LOG.Info($"Input datetime is: {datetime}");
+        LOG.Info($"Input datetime is: {start_datetime} to {end_datetime}");
 
         if (outfile is null)
             LogUtil.LogWarn(LOG, "Output file is not set");
@@ -32,7 +32,8 @@ public class Endpoints {
 
         try {
             var entries = ReadTableToFile(file)
-                .Where(d => d.DeliveryTime >= datetime);
+                .Where(d => d.DeliveryTime >= start_datetime)
+                .Where(d => d.DeliveryTime <= end_datetime);
 
             if (outfile == file)
                 entries = entries.ToArray(); // We cannot stream from file to itself, so read to RAM entriely first

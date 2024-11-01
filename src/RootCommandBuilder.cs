@@ -16,7 +16,8 @@ public class RootCommandBuilder {
         var getCommand = new Command("get", "Retrieve delivery data")
         {
             new Option<string>("--district", "District name"),
-            new Option<DateTime>("--datetime", () => DateTime.MinValue, "Date and time"),
+            new Option<DateTime>("--from-datetime", () => DateTime.MinValue, "Start date and time"),
+            new Option<DateTime>("--to-datetime", () => DateTime.MaxValue, "End date and time"),
             new Option<string>("--logfile", "Log file path"),
             new Option<string>("--outfile", "Output file"),
             new Argument<string>("file", "File path"),
@@ -26,8 +27,9 @@ public class RootCommandBuilder {
             endpoints.Get,
             CheckNonNull( getCommand.Options[0] as Option<string>     ), 
             CheckNonNull( getCommand.Options[1] as Option<DateTime>   ), 
-            CheckNonNull( getCommand.Options[2] as Option<string>     ), 
+            CheckNonNull( getCommand.Options[2] as Option<DateTime>   ), 
             CheckNonNull( getCommand.Options[3] as Option<string>     ), 
+            CheckNonNull( getCommand.Options[4] as Option<string>     ), 
             CheckNonNull( getCommand.Arguments[0] as Argument<string> )
         );
 
