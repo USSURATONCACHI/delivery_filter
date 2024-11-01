@@ -57,6 +57,15 @@ Id,District,Datetime,Weight
 9,North,2023-10-01 15:15:00,13.9
 ```
 
+## Tests
+
+```bash
+$ python3 tests.py
+All tests passed.
+```
+
+run tests with python to check that program works as expected. Python is chosen for simplicity of use and development speed.
+
 ## Logging
 
 Logs are managed by `log4net`. If a logfile path is specified with `--logfile`, the program logs all actions and errors to that file.
