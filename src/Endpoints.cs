@@ -41,6 +41,9 @@ public class Endpoints {
             if (district is not null)
                 entries = entries.Where(d => d.District.Trim().Equals(district.Trim(), StringComparison.CurrentCultureIgnoreCase));
 
+            foreach (var entry in entries)
+                LOG.Info($"Entry: ID {entry.Id}, {entry.District}, {entry.DeliveryTime:yyyy-MM-dd HH:mm:ss}, {entry.Weight} kg");
+
             if (outfile is not null)
                 WriteToFileCsv(entries, outfile);
         } catch (FileNotFoundException) {
@@ -54,8 +57,6 @@ public class Endpoints {
         using (var writer = new StreamWriter(filepath)) {
             writer.WriteLine("Id,District,Datetime,Weight"); // CSV header
             foreach (var entry in entries) {
-                LOG.Info($"Entry: ID {entry.Id}, {entry.District}, {entry.DeliveryTime:yyyy-MM-dd HH:mm:ss}, {entry.Weight} kg");
-
                 writer.WriteLine($"{entry.Id},{entry.District},{entry.DeliveryTime:yyyy-MM-dd HH:mm:ss},{entry.Weight}");
             }
         }
