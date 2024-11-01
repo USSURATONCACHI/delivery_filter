@@ -18,19 +18,6 @@ public class Endpoints {
 
     public Endpoints() {}
 
-
-    public void FixTable(string file) {
-
-    }
-
-    public void CheckCorrectness(string file) {
-
-    }
-
-    public void GetMockup(string file) {
-
-    }
-
     public void Get(string district, DateTime datetime, string logfile, string outfile, string file) {
         if (logfile is not null)
             LogUtil.AddFileLog4Net(logfile);
@@ -48,7 +35,7 @@ public class Endpoints {
                 .Where(d => d.DeliveryTime >= datetime);
 
             if (outfile == file)
-                entries = entries.ToArray();
+                entries = entries.ToArray(); // We cannot stream from file to itself, so read to RAM entriely first
 
             if (district is not null)
                 entries = entries.Where(d => d.District.Trim().Equals(district.Trim(), StringComparison.CurrentCultureIgnoreCase));

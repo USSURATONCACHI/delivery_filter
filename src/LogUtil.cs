@@ -8,8 +8,6 @@ using System.Reflection;
 namespace DeliveryFilter;
 
 public class LogUtil {
-    
-
     public static void LogError(ILog log, string text) {
         log.Error(text);
 

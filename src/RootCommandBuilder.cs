@@ -6,57 +6,9 @@ public class RootCommandBuilder {
     public static RootCommand Build(Endpoints endpoints) {
         var rootCommand = new RootCommand("Delivery filter CLI tool");
 
-        rootCommand.AddCommand(BuildCommandGetMockup(endpoints));
-        rootCommand.AddCommand(BuildCommandCheckCorrectness(endpoints));
-        rootCommand.AddCommand(BuildCommandFixTable(endpoints));
         rootCommand.AddCommand(BuildCommandGet(endpoints));
 
         return rootCommand;
-    }
-
-    // ----- gen_mockup ----
-    protected static Command BuildCommandGetMockup(Endpoints endpoints) {
-        var genMockupCommand = new Command("gen_mockup", "Generates a mockup")
-        { 
-            new Argument<string>("file", "File path") 
-        };
-
-        genMockupCommand.SetHandler(
-            endpoints.GetMockup, 
-            CheckNonNull( genMockupCommand.Arguments[0] as Argument<string> )
-        );
-
-        return genMockupCommand;
-    }
-
-    // ----- fix_table ----
-    protected static Command BuildCommandFixTable(Endpoints endpoints) {
-        var fixTableCommand = new Command("fix_table", "Fixes table") 
-        { 
-            new Argument<string>("file", "File path") 
-        };
-
-        fixTableCommand.SetHandler(
-            endpoints.FixTable, 
-            CheckNonNull( fixTableCommand.Arguments[0] as Argument<string> )
-        );
-
-        return fixTableCommand;
-    }
-    
-    // ----- check_correctness ----
-    protected static Command BuildCommandCheckCorrectness(Endpoints endpoints) {
-        var checkCorrectnessCommand = new Command("check_correctness", "Checks correctness") 
-        { 
-            new Argument<string>("file", "File path") 
-        };
-
-        checkCorrectnessCommand.SetHandler(
-            endpoints.CheckCorrectness, 
-            CheckNonNull( checkCorrectnessCommand.Arguments[0] as Argument<string> )
-        );
-
-        return checkCorrectnessCommand;
     }
 
     // ----- get ----
